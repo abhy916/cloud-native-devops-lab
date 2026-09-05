@@ -1,0 +1,12 @@
+.git
+.gitignore
+README.md
+docs/
+jenkins/
+kubernetes/
+scripts/
+terraform/
+
+app/src/
+app/target/*
+!app/target/devops-app-0.0.1-SNAPSHOT.jar
