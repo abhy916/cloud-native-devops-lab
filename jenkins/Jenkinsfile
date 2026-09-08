@@ -24,5 +24,16 @@ pipeline {
                 sh 'docker build -t cloud-native-devops-app:${BUILD_NUMBER} -f docker/Dockerfile .'
                }
             }
+        stage('AWS Auth Test') {
+            steps {
+             withCredentials([usernamePassword(
+             credentialsId: 'aws-ecr-credentials',
+             usernameVariable: 'AWS_ACCESS_KEY_ID',
+             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )]) {
+            sh 'aws sts get-caller-identity --region us-east-1'
+                } 
+               }
+             }
         }
 }
