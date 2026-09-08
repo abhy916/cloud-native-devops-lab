@@ -24,16 +24,25 @@ pipeline {
                 sh 'docker build -t cloud-native-devops-app:${BUILD_NUMBER} -f docker/Dockerfile .'
                }
             }
-        stage('AWS Auth Test') {
+                 stage('Push to ECR') {
             steps {
-             withCredentials([usernamePassword(
-             credentialsId: 'aws-ecr-credentials',
-             usernameVariable: 'AWS_ACCESS_KEY_ID',
-             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-            )]) {
-            sh 'aws sts get-caller-identity --region us-east-1'
-                } 
-               }
-             }
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-ecr-credentials',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh '''
+                        aws ecr get-login-password --region us-east-1 | \
+                        docker login --username AWS --password-stdin 439126042992.dkr.ecr.us-east-1.amazonaws.com
+
+                        docker tag cloud-native-devops-app:${BUILD_NUMBER} \
+                        439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${BUILD_NUMBER}
+
+                        docker push \
+                        439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${BUILD_NUMBER}
+                    '''
+                }
+            }
         }
+  }
 }
