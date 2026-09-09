@@ -44,3 +44,11 @@ terraform.rc
 # planout
 # Maven build output
 **/target/
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
