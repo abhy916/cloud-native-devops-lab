@@ -44,12 +44,12 @@ resource "aws_instance" "app_server" {
       439126042992.dkr.ecr.us-east-1.amazonaws.com
 
     docker pull \
-      439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:7
+      439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${var.image_tag}
 
     docker run -d \
       --name devops-app \
       --restart unless-stopped \
       -p 8080:8080 \
-      439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:7
+      439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${var.image_tag}
   EOF
 }
