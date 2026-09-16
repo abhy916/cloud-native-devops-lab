@@ -9,6 +9,6 @@ output "public_ip" {
 }
 
 output "application_url" {
-  description = "Spring Boot health endpoint"
-  value       = "http://${aws_instance.app_server.public_ip}:8080/health"
+  description = "Spring Boot health endpoint through the Application Load Balancer"
+  value       = "http://${aws_lb.app_alb.dns_name}/health"
 }
