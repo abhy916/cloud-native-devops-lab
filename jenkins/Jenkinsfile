@@ -44,5 +44,67 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to EC2') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'aws-ecr-credentials',
+            usernameVariable: 'AWS_ACCESS_KEY_ID',
+            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+        )]) {
+            sh '''
+                INSTANCE_ID=$(aws ec2 describe-instances \
+                  --region us-east-1 \
+                  --filters "Name=tag:Name,Values=cloud-native-devops-app" \
+                            "Name=instance-state-name,Values=running" \
+                  --query "Reservations[].Instances[].InstanceId" \
+                  --output text)
+                if [ -z "$INSTANCE_ID" ]; then
+    echo "ERROR: No running EC2 instance found for cloud-native-devops-app"
+    exit 1
+fi
+                echo "Target EC2 instance: ${INSTANCE_ID}"
+                COMMAND_ID=$(aws ssm send-command \
+  --region us-east-1 \
+  --instance-ids "$INSTANCE_ID" \
+  --document-name "AWS-RunShellScript" \
+  --parameters "commands=[
+    'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 439126042992.dkr.ecr.us-east-1.amazonaws.com',
+    'docker pull 439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${BUILD_NUMBER}',
+    'docker stop devops-app || true',
+    'docker rm devops-app || true',
+    'docker run -d --name devops-app --restart unless-stopped -p 8080:8080 439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app:${BUILD_NUMBER}'
+  ]" \
+  --query "Command.CommandId" \
+  --output text)
+
+echo "SSM Command ID: ${COMMAND_ID}"
+aws ssm wait command-executed \
+  --region us-east-1 \
+  --command-id "$COMMAND_ID" \
+  --instance-id "$INSTANCE_ID"
+
+ STATUS=$(aws ssm get-command-invocation \
+  --region us-east-1 \
+  --command-id "$COMMAND_ID" \
+  --instance-id "$INSTANCE_ID" \
+  --query "Status" \
+  --output text)
+
+echo "Deployment status: ${STATUS}"
+
+if [ "$STATUS" != "Success" ]; then
+    echo "ERROR: SSM deployment failed with status ${STATUS}"
+    aws ssm get-command-invocation \
+      --region us-east-1 \
+      --command-id "$COMMAND_ID" \
+      --instance-id "$INSTANCE_ID"
+    exit 1
+fi
+
+echo "Deployment completed successfully."
+            '''
+        }
+    }
+}
   }
 }
