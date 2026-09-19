@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: 439126042992.dkr.ecr.us-east-1.amazonaws.com/cloud-native-devops-app
+  tag: "8"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /
+  pathType: Prefix
