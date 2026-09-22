@@ -249,7 +249,7 @@ HEALTH STATUS: Healthy
 
 ## Monitoring
 
-Kubernetes monitoring is provided using `kube-prometheus-stack`.
+Kubernetes and application monitoring are provided using `kube-prometheus-stack`.
 
 The monitoring namespace contains:
 
@@ -259,7 +259,9 @@ The monitoring namespace contains:
 - Prometheus Operator
 - kube-state-metrics
 
-Prometheus scraping was validated using the PromQL query:
+### Kubernetes Metrics
+
+Prometheus scraping was initially validated using the PromQL query:
 
 ```promql
 up
@@ -272,6 +274,34 @@ Grafana was connected to Prometheus and the same query was successfully executed
 ```text
 Kubernetes metrics -> Prometheus -> Grafana
 ```
+
+### Application Metrics
+
+The Spring Boot application exposes application-level metrics using Spring Boot Actuator and Micrometer with the Prometheus registry.
+
+Metrics are exposed through:
+
+```text
+/actuator/prometheus
+```
+
+A Kubernetes `ServiceMonitor` discovers `devops-app-service` using the `app=devops-app` Service label and instructs Prometheus to scrape the application's `http` endpoint every 15 seconds.
+
+The application monitoring flow is:
+
+```text
+Spring Boot -> Actuator/Micrometer -> /actuator/prometheus -> Kubernetes Service -> ServiceMonitor -> Prometheus -> Grafana
+```
+
+Application metric collection was validated in Prometheus using:
+
+```promql
+application_ready_time_seconds
+```
+
+The metric was successfully collected from the running `devops-app` Pod and was also queried and visualized through Grafana Explore, confirming end-to-end application observability.
+
+### Local Development Note
 
 Some Docker Desktop-specific scrape targets may not be available in the local development environment.
 
@@ -349,6 +379,7 @@ The following capabilities have been successfully demonstrated:
 - Argo CD automated GitOps synchronization
 - Argo CD self-healing
 - Prometheus monitoring
+- Spring Boot Actuator and Micrometer application metrics via ServiceMonitor
 - Grafana visualization and Prometheus integration
 - Troubleshooting across AWS, Kubernetes, GitOps, and monitoring
 
@@ -356,8 +387,6 @@ The following capabilities have been successfully demonstrated:
 
 Potential extensions include:
 
-- Spring Boot Actuator and Micrometer application metrics
-- Prometheus ServiceMonitor for application-specific metrics
 - Kubernetes readiness and liveness probes
 - Resource requests and limits
 - Automated image-tag updates in the GitOps workflow
